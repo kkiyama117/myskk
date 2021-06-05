@@ -1,6 +1,6 @@
 [workspace]
 members=[
-    "ruskk_keys",
+    "crates/ruskk_keys",
     "ruskk_default"
 ]
 [profile.release]
