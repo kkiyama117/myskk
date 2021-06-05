@@ -1,7 +1,9 @@
 /// Main element of `KeyEvent`.
-/// This trait should implement `Eq` ,`Clone`
-pub trait Key: PartialEq + Eq + std::fmt::Debug + Clone{}
+/// This trait should implement `PartialEq` ,`Clone`, and Debug since `KeyEvent`
+/// requires.
+pub trait Key: PartialEq + Eq + std::fmt::Debug + Clone {}
 
+// some type can be used as `Key`.
 impl<'a> Key for &'a str {}
 impl Key for String {}
 impl Key for usize {}

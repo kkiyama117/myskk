@@ -3,6 +3,7 @@ members=[
     "crates/ruskk_keys",
     "ruskk_default"
 ]
+
 [profile.release]
 lto=true
 opt-level=3
