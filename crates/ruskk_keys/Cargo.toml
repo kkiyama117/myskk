@@ -10,15 +10,14 @@ description = "wrapper of keyboard input"
 crate-type = ["lib"]
 
 [features]
+default = []
 b_tree = []
 
-[target.'cfg(not(any(target_os = "linux", target_os = "unix")))'.features]
-default = []
-
-[target.'cfg(any(target_os = "linux", target_os = "unix"))'.features]
-default = ["x11"]
+# only for *nix os but can not specify target
+# cargo manifest info:
+#     https://github.com/rust-lang/cargo/issues/7914
+#     https://github.com/rust-lang/cargo/issues/7914
 x11 = ["bitflags", "x11-keysymdef"]
-
 
 [dependencies]
 thiserror = "1.0"
@@ -27,6 +26,7 @@ itertools = "0.10"
 
 serde = { version = "1", features = ["derive"], optional = true }
 
+# I think this is not only for *nix OS but should implement for other systems.
 [target.'cfg(any(target_os = "linux", target_os = "unix"))'.dependencies]
 bitflags = { version = "1.2", optional = true }
 x11-keysymdef = { git = "https://github.com/divvun/xkb-parser", optional = true }
