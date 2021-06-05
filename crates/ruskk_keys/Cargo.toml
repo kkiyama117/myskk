@@ -2,7 +2,34 @@
 name = "ruskk_keys"
 version = "0.1.0"
 edition = "2018"
+authors = ["kkiyama117 <k.kiyama117@gmail.com>"]
+description = "wrapper of keyboard input"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+#crate-type = ["cdylib", "lib"]
+crate-type = ["lib"]
+
+[features]
+b_tree = []
+
+[target.'cfg(not(any(target_os = "linux", target_os = "unix")))'.features]
+default = []
+
+[target.'cfg(any(target_os = "linux", target_os = "unix"))'.features]
+default = ["x11"]
+x11 = ["bitflags", "x11-keysymdef"]
+
 
 [dependencies]
+thiserror = "1.0"
+anyhow = "1.0"
+itertools = "0.10"
+
+serde = { version = "1", features = ["derive"], optional = true }
+
+[target.'cfg(any(target_os = "linux", target_os = "unix"))'.dependencies]
+bitflags = { version = "1.2", optional = true }
+x11-keysymdef = { git = "https://github.com/divvun/xkb-parser", optional = true }
+
+[package.metadata.docs.rs]
+features = ["serde", "b_tree", "x11"]
