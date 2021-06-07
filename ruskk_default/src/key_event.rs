@@ -19,7 +19,9 @@ impl TryFrom<InputStrType> for X11Key {
         .split('-')
         .last()
         .and_then(|x| x11_keysymdef::lookup_by_name(x).map(|x| x.unicode))
-        .ok_or(Self::Error::ParseFailed { msg: x.to_string() }),
+        .ok_or(Self::Error::ParseFailed {
+          msg: format!("unknown key: {}", x),
+        }),
       InputStrType::Special(x) => Ok(
         x11_keysymdef::lookup_by_name(x.as_str())
           .map(|x| x.unicode)
@@ -42,7 +44,7 @@ impl TryFrom<InputStrType> for X11Modifier {
         .collect_vec()
         .split_last()
         .ok_or(KeyEventError::ParseFailed {
-          msg: format!("unknown modifier"),
+          msg: format!("unknown modifier: {}", base),
         })?
         .1
         .iter()
@@ -54,7 +56,7 @@ impl TryFrom<InputStrType> for X11Modifier {
           "A" => Ok(accum | X11Modifier::MOD1_MASK),
           "G" => Ok(accum | X11Modifier::MOD5_MASK),
           _ => Err(KeyEventError::ParseFailed {
-            msg: format!("unknown modifier {}", x),
+            msg: format!("unknown modifier: {}", x),
           }),
         }),
       InputStrType::Special(base) => base.split_whitespace().try_fold(
@@ -64,7 +66,7 @@ impl TryFrom<InputStrType> for X11Modifier {
           "control" => Ok(accum | X11Modifier::CONTROL_MASK),
           "alt" => Ok(accum | X11Modifier::MOD1_MASK),
           _ => Err(KeyEventError::ParseFailed {
-            msg: format!("unknown modifier {}", x),
+            msg: format!("unknown modifier: {}", x),
           }),
         },
       ),

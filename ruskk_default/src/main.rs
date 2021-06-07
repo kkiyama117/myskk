@@ -9,4 +9,7 @@ fn main() {
 
   let input = "(shift)";
   println!("{:?}", input.key_events::<Key, Modifiers>().collect_vec());
+
+  let input = "foo bar-a b";
+  println!("{:?}", input.key_events::<Key, Modifiers>().collect_vec());
 }
