@@ -10,73 +10,6 @@ use std::convert::TryFrom;
 use std::marker::PhantomData;
 use std::str::Chars;
 
-impl TryFrom<InputStrType> for X11Key {
-  type Error = KeyEventError;
-
-  fn try_from(value: InputStrType) -> Result<Self, Self::Error> {
-    match value {
-      InputStrType::Normal(x) => x
-        .split('-')
-        .last()
-        .and_then(|x| x11_keysymdef::lookup_by_name(x).map(|x| x.unicode))
-        .ok_or(Self::Error::ParseFailed {
-          msg: format!("unknown key: {}", x),
-        }),
-      InputStrType::Special(x) => Ok(
-        x11_keysymdef::lookup_by_name(x.as_str())
-          .map(|x| x.unicode)
-          .unwrap_or('\0'),
-      ),
-      InputStrType::None => Err(Self::Error::ParseFailed {
-        msg: "void".to_string(),
-      }),
-    }
-  }
-}
-
-impl TryFrom<InputStrType> for X11Modifier {
-  type Error = KeyEventError;
-
-  fn try_from(value: InputStrType) -> Result<Self, Self::Error> {
-    match value {
-      InputStrType::Normal(base) => base
-        .split('-')
-        .collect_vec()
-        .split_last()
-        .ok_or(KeyEventError::ParseFailed {
-          msg: format!("unknown modifier: {}", base),
-        })?
-        .1
-        .iter()
-        .try_fold(X11Modifier::NONE, |accum, x| match *x {
-          // support only limited modifiers in this form
-          "S" => Ok(accum | X11Modifier::SHIFT_MASK),
-          "C" => Ok(accum | X11Modifier::CONTROL_MASK),
-          "M" => Ok(accum | X11Modifier::META_MASK),
-          "A" => Ok(accum | X11Modifier::MOD1_MASK),
-          "G" => Ok(accum | X11Modifier::MOD5_MASK),
-          _ => Err(KeyEventError::ParseFailed {
-            msg: format!("unknown modifier: {}", x),
-          }),
-        }),
-      InputStrType::Special(base) => base.split_whitespace().try_fold(
-        X11Modifier::NONE,
-        |accum, x| match x {
-          "shift" => Ok(accum | X11Modifier::SHIFT_MASK),
-          "control" => Ok(accum | X11Modifier::CONTROL_MASK),
-          "alt" => Ok(accum | X11Modifier::MOD1_MASK),
-          _ => Err(KeyEventError::ParseFailed {
-            msg: format!("unknown modifier: {}", x),
-          }),
-        },
-      ),
-      InputStrType::None => Err(Self::Error::ParseFailed {
-        msg: "void key".to_string(),
-      }),
-    }
-  }
-}
-
 #[derive(Clone, Debug)]
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct CompatibleParser<'a, K, M> {
@@ -163,7 +96,7 @@ where
             }
           }
         } else {
-          // accum must not be error if continued.
+          // accum must not be error if continued, hence return error as it is.
           Done(accum)
         }
       })
@@ -189,6 +122,72 @@ where
     }
   }
 }
+impl TryFrom<InputStrType> for X11Key {
+  type Error = KeyEventError;
+
+  fn try_from(value: InputStrType) -> Result<Self, Self::Error> {
+    match value {
+      InputStrType::Normal(x) => x
+        .split('-')
+        .last()
+        .and_then(|x| x11_keysymdef::lookup_by_name(x).map(|x| x.unicode))
+        .ok_or(Self::Error::ParseFailed {
+          msg: format!("unknown key: {}", x),
+        }),
+      InputStrType::Special(x) => Ok(
+        x11_keysymdef::lookup_by_name(x.as_str())
+          .map(|x| x.unicode)
+          .unwrap_or('\0'),
+      ),
+      InputStrType::None => Err(Self::Error::ParseFailed {
+        msg: "void".to_string(),
+      }),
+    }
+  }
+}
+
+impl TryFrom<InputStrType> for X11Modifier {
+  type Error = KeyEventError;
+
+  fn try_from(value: InputStrType) -> Result<Self, Self::Error> {
+    match value {
+      InputStrType::Normal(base) => base
+        .split('-')
+        .collect_vec()
+        .split_last()
+        .ok_or(KeyEventError::ParseFailed {
+          msg: format!("unknown modifier: {}", base),
+        })?
+        .1
+        .iter()
+        .try_fold(X11Modifier::NONE, |accum, x| match *x {
+          // support only limited modifiers in this form
+          "S" => Ok(accum | X11Modifier::SHIFT_MASK),
+          "C" => Ok(accum | X11Modifier::CONTROL_MASK),
+          "M" => Ok(accum | X11Modifier::META_MASK),
+          "A" => Ok(accum | X11Modifier::MOD1_MASK),
+          "G" => Ok(accum | X11Modifier::MOD5_MASK),
+          _ => Err(KeyEventError::ParseFailed {
+            msg: format!("unknown modifier: {}", x),
+          }),
+        }),
+      InputStrType::Special(base) => base.split_whitespace().try_fold(
+        X11Modifier::NONE,
+        |accum, x| match x {
+          "shift" => Ok(accum | X11Modifier::SHIFT_MASK),
+          "control" => Ok(accum | X11Modifier::CONTROL_MASK),
+          "alt" => Ok(accum | X11Modifier::MOD1_MASK),
+          _ => Err(KeyEventError::ParseFailed {
+            msg: format!("unknown modifier: {}", x),
+          }),
+        },
+      ),
+      InputStrType::None => Err(Self::Error::ParseFailed {
+        msg: "void key".to_string(),
+      }),
+    }
+  }
+}
 
 #[derive(Clone, Debug)]
 pub enum InputStrType {
@@ -198,11 +197,11 @@ pub enum InputStrType {
 }
 
 pub trait StringExt {
-  fn key_events<K, M>(&self) -> CompatibleParser<'_, K, M>;
+  fn as_key_events<K, M>(&self) -> CompatibleParser<'_, K, M>;
 }
 
 impl StringExt for String {
-  fn key_events<K, M>(&self) -> CompatibleParser<'_, K, M> {
+  fn as_key_events<K, M>(&self) -> CompatibleParser<'_, K, M> {
     CompatibleParser {
       iter: self.chars(),
       position: 0,
@@ -212,7 +211,7 @@ impl StringExt for String {
 }
 
 impl<'a> StringExt for &'a str {
-  fn key_events<K, M>(&self) -> CompatibleParser<'_, K, M> {
+  fn as_key_events<K, M>(&self) -> CompatibleParser<'_, K, M> {
     CompatibleParser {
       iter: self.chars(),
       position: 0,
