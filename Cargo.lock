@@ -69,6 +69,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "ruskk_kana"
+version = "0.1.0"
+
+[[package]]
 name = "ruskk_keys"
 version = "0.1.0"
 dependencies = [

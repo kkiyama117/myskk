@@ -1,6 +1,7 @@
 [workspace]
 members=[
     "crates/ruskk_keys",
+    "crates/ruskk_kana",
     "ruskk_default"
 ]
 
