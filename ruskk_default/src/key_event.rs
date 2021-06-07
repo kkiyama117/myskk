@@ -21,10 +21,13 @@ pub struct CompatibleParser<'a> {
 impl<'a> Iterator for CompatibleParser<'a> {
   type Item = Result<KeyEvent<X11Key, X11Modifier>, KeyEventError>;
   fn next(&mut self) -> Option<Self::Item> {
-    match self.parse_text() {
-      Ok(x) => Some(extract_key_event(x)),
-      Err(KeyEventError::Done) => None,
-      Err(e) => Some(Err(e)),
+    if self.iter.clone().count() > self.position {
+      match self.parse_text() {
+        Ok(x) => Some(extract_key_event(x)),
+        Err(e) => Some(Err(e)),
+      }
+    } else {
+      None
     }
   }
 }
@@ -66,19 +69,10 @@ impl<'a> CompatibleParser<'a> {
                     msg: "bare ')' is not allowed in complex keyseq"
                       .to_string(),
                   })),
-                  _ => {
-                    if self.position >= self.iter.clone().count() - 1 {
-                      Done(Ok(InputTokenStructInner {
-                        kind,
-                        raw: format!("{}{}", raw, c),
-                      }))
-                    } else {
-                      Continue(Ok(InputTokenStructInner {
-                        kind,
-                        raw: format!("{}{}", raw, c),
-                      }))
-                    }
-                  }
+                  _ => Continue(Ok(InputTokenStructInner {
+                    kind,
+                    raw: format!("{}{}", raw, c),
+                  })),
                 },
                 InputStrType::Special => match c {
                   '\\' => {
@@ -94,19 +88,10 @@ impl<'a> CompatibleParser<'a> {
                     kind: InputStrType::Special,
                     raw: Default::default(),
                   })),
-                  _ => {
-                    if self.position >= self.iter.clone().count() - 1 {
-                      Done(Ok(InputTokenStructInner {
-                        kind,
-                        raw: format!("{}{}", raw, c),
-                      }))
-                    } else {
-                      Continue(Ok(InputTokenStructInner {
-                        kind,
-                        raw: format!("{}{}", raw, c),
-                      }))
-                    }
-                  }
+                  _ => Continue(Ok(InputTokenStructInner {
+                    kind,
+                    raw: format!("{}{}", raw, c),
+                  })),
                 },
               }
             }
@@ -216,13 +201,23 @@ struct InputTokenStruct {
   raw: SmolStr,
 }
 
+impl InputToken for InputTokenStruct {
+  fn kind(&self) -> InputStrType {
+    self.kind.clone()
+  }
+
+  fn as_str(&self) -> &str {
+    self.raw.as_str()
+  }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct InputTokenStructInner {
   kind: InputStrType,
   raw: String,
 }
 
-impl InputToken for InputTokenStruct {
+impl InputToken for InputTokenStructInner {
   fn kind(&self) -> InputStrType {
     self.kind.clone()
   }
