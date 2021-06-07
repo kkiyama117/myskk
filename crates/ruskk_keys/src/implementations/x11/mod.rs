@@ -1,4 +1,3 @@
-pub mod compatible;
 mod modifiers;
 
 type XKeySymbol = char;

@@ -10,7 +10,7 @@ pub mod b_tree;
 pub mod x11;
 
 pub mod prelude {
-  pub use crate::errors::KeyEventFormatError;
+  pub use crate::errors::KeyEventError;
   pub use crate::event::key::Key;
   pub use crate::event::modifiers::Modifiers;
   pub use crate::event::KeyEvent;

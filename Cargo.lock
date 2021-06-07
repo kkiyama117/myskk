@@ -62,6 +62,11 @@ dependencies = [
 [[package]]
 name = "ruskk_default"
 version = "0.1.0"
+dependencies = [
+ "itertools",
+ "ruskk_keys",
+ "x11-keysymdef",
+]
 
 [[package]]
 name = "ruskk_keys"

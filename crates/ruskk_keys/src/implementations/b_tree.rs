@@ -3,6 +3,9 @@ use std::collections::BTreeSet;
 use std::iter::FromIterator;
 use std::ops::{BitAnd, BitOr, BitXor};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// Example implementation for `ModifiersTrait` trait
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -48,15 +51,15 @@ impl<I: Ord + Clone> FromIterator<I> for BTreeModifiers<I> {
   }
 }
 
-impl<I: Ord + Clone> FromIterator<I> for BTreeModifiers<I> {
-  fn from_iter<T: IntoIterator>(iter: T) -> Self {
-    iter.collect()
-  }
-}
-
 impl<M: Ord + Clone> Modifiers for BTreeModifiers<M> {
   fn is_empty(&self) -> bool {
     self.value.is_empty()
+  }
+}
+
+impl<I: Ord + Clone> From<Vec<I>> for BTreeModifiers<I> {
+  fn from(v: Vec<I>) -> Self {
+    v.into_iter().collect()
   }
 }
 
@@ -65,7 +68,6 @@ mod tests {
   use crate::b_tree::BTreeModifiers;
   use crate::event::modifiers::Modifiers;
   use crate::event::KeyEvent;
-  use std::iter::FromIterator;
 
   type BKeyEvent<'a> = KeyEvent<&'a str, BTreeModifiers<&'a str>>;
 
@@ -82,10 +84,7 @@ mod tests {
   fn subset_eq() {
     let a = BKeyEvent::new("foo", vec!["shift", "alt"].into());
     let b = BKeyEvent::new("foo", vec!["shift"].into());
-    assert_eq!(
-      a.contains(&b),
-      Some(BTreeModifiers::from_iter(vec!["b"].into_iter()))
-    );
+    assert_eq!(a.contains(&b), Some(vec!["alt"].into_iter().collect()));
   }
 
   #[test]
