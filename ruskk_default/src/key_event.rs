@@ -20,9 +20,11 @@ impl TryFrom<InputStrType> for X11Key {
         .last()
         .and_then(|x| x11_keysymdef::lookup_by_name(x).map(|x| x.unicode))
         .ok_or(Self::Error::ParseFailed { msg: x.to_string() }),
-      InputStrType::Special(x) => x11_keysymdef::lookup_by_name(x.as_str())
-        .map(|x| x.unicode)
-        .ok_or(Self::Error::ParseFailed { msg: x.to_string() }),
+      InputStrType::Special(x) => Ok(
+        x11_keysymdef::lookup_by_name(x.as_str())
+          .map(|x| x.unicode)
+          .unwrap_or('\0'),
+      ),
       InputStrType::None => Err(Self::Error::ParseFailed {
         msg: "void".to_string(),
       }),
@@ -45,6 +47,7 @@ impl TryFrom<InputStrType> for X11Modifier {
         .1
         .iter()
         .try_fold(X11Modifier::NONE, |accum, x| match *x {
+          // support only limited modifiers in this form
           "S" => Ok(accum | X11Modifier::SHIFT_MASK),
           "C" => Ok(accum | X11Modifier::CONTROL_MASK),
           "M" => Ok(accum | X11Modifier::META_MASK),
@@ -54,23 +57,17 @@ impl TryFrom<InputStrType> for X11Modifier {
             msg: format!("unknown modifier {}", x),
           }),
         }),
-      InputStrType::Special(base) => base
-        .split_whitespace()
-        .collect_vec()
-        .split_last()
-        .ok_or(KeyEventError::ParseFailed {
-          msg: format!("unknown modifier"),
-        })?
-        .1
-        .iter()
-        .try_fold(X11Modifier::NONE, |accum, x| match *x {
+      InputStrType::Special(base) => base.split_whitespace().try_fold(
+        X11Modifier::NONE,
+        |accum, x| match x {
           "shift" => Ok(accum | X11Modifier::SHIFT_MASK),
           "control" => Ok(accum | X11Modifier::CONTROL_MASK),
           "alt" => Ok(accum | X11Modifier::MOD1_MASK),
           _ => Err(KeyEventError::ParseFailed {
             msg: format!("unknown modifier {}", x),
           }),
-        }),
+        },
+      ),
       InputStrType::None => Err(Self::Error::ParseFailed {
         msg: "void key".to_string(),
       }),
@@ -152,9 +149,14 @@ where
                     Continue(Ok(InputStrType::Special(format!("{}{}", s, c))))
                   }
                 },
-                InputStrType::None => {
-                  Continue(Ok(InputStrType::Normal(String::from(c))))
-                }
+                InputStrType::None => match c {
+                  '(' => Continue(Ok(InputStrType::Special(String::new()))),
+                  ')' => Done(Err(KeyEventError::ParseFailed {
+                    msg: "bare ')' is not allowed in complex keyseq"
+                      .to_string(),
+                  })),
+                  _ => Continue(Ok(InputStrType::Normal(format!("{}", c)))),
+                },
               },
             }
           }
