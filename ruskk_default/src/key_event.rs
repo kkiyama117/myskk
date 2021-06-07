@@ -15,8 +15,10 @@ impl TryFrom<InputStrType> for X11Key {
 
   fn try_from(value: InputStrType) -> Result<Self, Self::Error> {
     match value {
-      InputStrType::Normal(x) => x11_keysymdef::lookup_by_name(x.as_str())
-        .map(|x| x.unicode)
+      InputStrType::Normal(x) => x
+        .split('-')
+        .last()
+        .and_then(|x| x11_keysymdef::lookup_by_name(x).map(|x| x.unicode))
         .ok_or(Self::Error::ParseFailed { msg: x.to_string() }),
       InputStrType::Special(x) => x11_keysymdef::lookup_by_name(x.as_str())
         .map(|x| x.unicode)
@@ -70,7 +72,7 @@ impl TryFrom<InputStrType> for X11Modifier {
           }),
         }),
       InputStrType::None => Err(Self::Error::ParseFailed {
-        msg: "void".to_string(),
+        msg: "void key".to_string(),
       }),
     }
   }

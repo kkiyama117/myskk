@@ -7,5 +7,5 @@ edition = "2018"
 
 [dependencies]
 itertools = "0.10"
-ruskk_keys = {path = "../crates/ruskk_keys"}
-x11-keysymdef = { git = "https://github.com/divvun/xkb-parser"}
+ruskk_keys = { path = "../crates/ruskk_keys", features = ["x11"] }
+x11-keysymdef = { git = "https://github.com/divvun/xkb-parser" }
